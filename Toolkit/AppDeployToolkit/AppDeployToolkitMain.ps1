@@ -5745,11 +5745,25 @@ Function Execute-ProcessAsUser {
 			}
 			#Windows Task Scheduler 1.0
 			Else {
-				While ((($exeSchTasksResult = & $exeSchTasks /query /TN $schTaskName /V /FO CSV) | ConvertFrom-CSV | Select-Object -ExpandProperty 'Status' -First 1) -eq 'Running') {
+				[string]$PrivStatus = "Status"
+				[string]$PrivRunning = "Running"
+				[string]$PrivLastResult = "Last Result"
+				if($currentLanguage -eq "DE"){
+					$PrivStatus = "zzz"
+					$PrivRunning = "xxxx"
+					$PrivLastResult = "yyyyy"
+				}
+				elseif($currentLanguage -eq "FR"){
+					$PrivStatus = "Statut"
+					$PrivRunning = "En cours"
+					$PrivLastResult = "Dernier r‚sultat"
+				}
+	
+				While ((($exeSchTasksResult = & $exeSchTasks /query /TN $schTaskName /V /FO CSV) | ConvertFrom-CSV | Select-Object -ExpandProperty $PrivStatus -First 1) -eq $PrivRunning) {
 					Start-Sleep -Seconds 5
 				}
 				#  Get the exit code from the process launched by the scheduled task
-				[int32]$executeProcessAsUserExitCode = ($exeSchTasksResult = & $exeSchTasks /query /TN $schTaskName /V /FO CSV) | ConvertFrom-CSV | Select-Object -ExpandProperty 'Last Result' -First 1
+				[int32]$executeProcessAsUserExitCode = ($exeSchTasksResult = & $exeSchTasks /query /TN $schTaskName /V /FO CSV) | ConvertFrom-CSV | Select-Object -ExpandProperty $PrivLastResult -First 1
 			}
 			Write-Log -Message "Exit code from process launched by scheduled task [$executeProcessAsUserExitCode]." -Source ${CmdletName}
 		}
@@ -6039,7 +6053,7 @@ Function Block-AppExecution {
 		[string]$SchInstallName = $installName
 		ForEach ($invalidChar in $invalidScheduledTaskChars) { [string]$SchInstallName = $SchInstallName -replace [regex]::Escape($invalidChar),'' }
 		[string]$blockExecutionTempPath = Join-Path -Path $dirAppDeployTemp -ChildPath 'BlockExecution'
-		[string]$schTaskUnblockAppsCommand += "-ExecutionPolicy Bypass -NoProfile -NoLogo -WindowStyle Hidden -File `'$blockExecutionTempPath\$scriptFileName`' -CleanupBlockedApps -ReferredInstallName `'$SchInstallName`' -ReferredInstallTitle `'$installTitle`' -ReferredLogName `'$logName`' -AsyncToolkitLaunch"
+		[string]$schTaskUnblockAppsCommand += "-ExecutionPolicy Bypass -NoProfile -NoLogo -WindowStyle Hidden -File `"$blockExecutionTempPath\$scriptFileName`" -CleanupBlockedApps -ReferredInstallName `"$SchInstallName`" -ReferredInstallTitle `"$installTitle`" -ReferredLogName `"$logName`" -AsyncToolkitLaunch"
 		## Specify the scheduled task configuration in XML format
 		[string]$xmlUnblockAppsSchTask = @"
 <?xml version="1.0" encoding="UTF-16"?>
@@ -10757,27 +10771,28 @@ Function Set-ActiveSetup {
 				'.exe' {
 					[string]$CUStubExePath = $StubExePath
 					[string]$CUArguments = $Arguments
-					[string]$StubPath = "$CUStubExePath"
+					## ADDS QUOTES TO ALL PATHS (https://cwe.mitre.org/data/definitions/428.html)
+					[string]$StubPath = "`"$CUStubExePath`""
 				}
 				'.js' {
 					[string]$CUStubExePath = "$envWinDir\system32\cscript.exe"
 					[string]$CUArguments = "//nologo `"$StubExePath`""
-					[string]$StubPath = "$CUStubExePath $CUArguments"
+					[string]$StubPath = "`"$CUStubExePath $CUArguments`""
 				}
 				'.vbs' {
 					[string]$CUStubExePath = "$envWinDir\system32\cscript.exe"
 					[string]$CUArguments = "//nologo `"$StubExePath`""
-					[string]$StubPath = "$CUStubExePath $CUArguments"
+					[string]$StubPath = "`"$CUStubExePath $CUArguments`""
 				}
 				'.cmd' {
 					[string]$CUStubExePath = "$envWinDir\system32\CMD.exe"
 					[string]$CUArguments = "/C `"$StubExePath`""
-					[string]$StubPath = "$CUStubExePath $CUArguments"
+					[string]$StubPath = "`"$CUStubExePath $CUArguments`""
 				}
 				'.ps1' {
 					[string]$CUStubExePath = "$PSHOME\powershell.exe"
 					[string]$CUArguments = "-ExecutionPolicy Bypass -NoProfile -NoLogo -WindowStyle Hidden -Command `"&{& `\`"$StubExePath`\`"}`""
-					[string]$StubPath = "$CUStubExePath $CUArguments"
+					[string]$StubPath = "`"$CUStubExePath $CUArguments`""
 				}
 			}
 			If ($Arguments) {
@@ -12118,6 +12133,7 @@ try {
 	if ($appDeployLogoBannerHeight -gt $appDeployLogoBannerMaxHeight) {
 		$appDeployLogoBannerHeight = $appDeployLogoBannerMaxHeight
 	}
+	$appDeployLogoBannerObject.Dispose()	# Must dispose() when install from local cache or else AppDeployToolkitBanner.png is locked open and cannot be removed when removing the pkg
 }
 catch { }
 
