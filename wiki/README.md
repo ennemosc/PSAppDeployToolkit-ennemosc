@@ -16,7 +16,7 @@ The PowerShell App Deployment Toolkit can be used to replace your WiseScript, VB
 
 **Localized** - The UI is localized in several languages and more can easily be added using the XML configuration file.
 
-**Integration -** Integrates well with SCCM 2007/2012; provides installation and uninstallation deployment types with options on how to handle exit codes, such as supressing reboots or returning a fast retry code.
+**Integration -** Integrates well with SCCM 2007/2012; provides installation and uninstallation deployment types with options on how to handle exit codes, such as suppressing reboots or returning a fast retry code.
 
 **Updatable -** The logic engine and functions are separated from per-application scripts, so that you can update the toolkit when a new version is released and maintain backwards compatibility with your deployment scripts.
 
